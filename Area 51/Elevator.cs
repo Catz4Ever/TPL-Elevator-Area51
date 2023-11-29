@@ -2,17 +2,18 @@
 {
     internal class Elevator
     {
-        private object elevatorLock = new object();
-        private Queue<Floor> floorQueue = new Queue<Floor>();
-        private Floor currentFloor = Floor.G;
-        private bool isMoving = false;
-        private Semaphore semaphore = new Semaphore(1, 1);
-        private ManualResetEvent elevatorArrived = new ManualResetEvent(false);
+        public object elevatorLock = new object();
+        public Queue<Floor> floorQueue = new Queue<Floor>();
+        public Floor currentFloor = Floor.G;
+        public bool isMoving = false;
+        public Semaphore semaphore = new Semaphore(1, 1);
+        public ManualResetEvent elevatorArrived = new ManualResetEvent(false);
         public List<Agent> agentsInElevator = new List<Agent>();
-        private bool buttonPressed = false;
+        public bool buttonPressed = false;
 
         public void CallElevator(Floor floor, string agentName)
         {
+            buttonPressed = false;
             lock (elevatorLock)
             {
                 if (!buttonPressed)
@@ -30,7 +31,7 @@
             }
         }
 
-        private void MoveElevator()
+        public void MoveElevator()
         {
             while (floorQueue.Count > 0)
             {
@@ -41,7 +42,7 @@
             isMoving = false;
         }
 
-        private void MoveToFloor(Floor destinationFloor)
+        public void MoveToFloor(Floor destinationFloor)
         {
             int direction = Math.Sign((int)destinationFloor - (int)currentFloor);
             while (currentFloor != destinationFloor)
@@ -58,7 +59,7 @@
             Console.WriteLine($"Elevator arrived at floor {floor}");
             semaphore.WaitOne();
 
-            // Check if any agent inside the elevator needs to exit at the current floor
+           
             Agent exitingAgent = agentsInElevator.Find(agent => agent.DestinationFloor == floor);
 
             if (exitingAgent != null)
@@ -77,11 +78,12 @@
                 else
                 {
                     Console.WriteLine("Security check failed. Agent does not have access to this floor.");
+                    buttonPressed = false;
                 }
             }
             else
             {
-                // Continue with the security check for agents entering the elevator
+                
                 SecurityLevel agentSecurityLevel = GetAgentSecurityLevel(Thread.CurrentThread as Thread);
 
                 if (CheckSecurityLevel(floor, agentSecurityLevel))
@@ -90,7 +92,7 @@
                     Thread.Sleep(1000);
                     Console.WriteLine("Door opened.");
 
-                    // Check if the current agent can enter the elevator
+                    
                     Agent currentAgent = agentsInElevator.Find(agent => agent.ThreadId == Thread.CurrentThread.ManagedThreadId);
                     if (currentAgent != null && currentAgent.DestinationFloor == floor)
                     {
@@ -100,6 +102,7 @@
                 else
                 {
                     Console.WriteLine("Security check failed. Agent does not have access to this floor.");
+                    buttonPressed = false;
                 }
             }
 
@@ -108,7 +111,7 @@
 
         }
 
-        private bool CheckSecurityLevel(Floor floor, SecurityLevel agentSecurityLevel)
+        public bool CheckSecurityLevel(Floor floor, SecurityLevel agentSecurityLevel)
         {
             switch (floor)
             {
@@ -124,7 +127,7 @@
             }
         }
 
-        private SecurityLevel GetAgentSecurityLevel(Thread agentThread)
+        public SecurityLevel GetAgentSecurityLevel(Thread agentThread)
         {
             if (agentThread.Name != null && agentThread.Name.Contains("TopSecret"))
             {
